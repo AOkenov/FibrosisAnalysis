@@ -103,6 +103,6 @@ fig.legend(handles=nonfibrotic_bar.patches[:1] + fibrotic_bar.patches[:1],
            bbox_to_anchor=(0.5, 0.9), ncol=2)
 plt.show()
 
-path_save = Path(__file__).parent.joinpath('figures')
-fig.savefig(path_save.joinpath('fibrosis_density.png'),
-            dpi=300, bbox_inches='tight')
+# path_save = Path(__file__).parent.joinpath('figures')
+# fig.savefig(path_save.joinpath('fibrosis_density.png'),
+#             dpi=300, bbox_inches='tight')
