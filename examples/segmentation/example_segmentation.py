@@ -6,7 +6,7 @@ from fibrosisanalysis.segmentation.angular_segments import AngularSegments
 from fibrosisanalysis.segmentation.radial_segments import RadialSegments
 
 
-n_angular_segments = 12
+n_angular_segments = 36
 n_radial_segments = 3
 
 r_x = {'endo': 100, 'epi': 150}

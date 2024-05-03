@@ -206,7 +206,7 @@ class HeartSliceBuilder:
             The built HeartSlice object.
         """
         spline_edges = AngularSegments.build(self.heart_slice.spline_edges,
-                                             n_angular, n_radial, node_step)
+                                             n_angular, node_step)
         spline_edges = RadialSegments.build(spline_edges, n_radial, node_step)
 
         wall_mask = RadialSegments.wall_mask(self.heart_slice.image,

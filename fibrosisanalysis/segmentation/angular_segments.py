@@ -71,7 +71,7 @@ class AngularSegments:
         return labels
 
     @staticmethod
-    def build(spline_edges, number_of_segments, node_step=1,
+    def build(spline_edges, number_of_segments, node_step=3,
               optimization_step=5):
         """Compute the starting and ending points of radial lines for
         segmentation.
@@ -92,6 +92,12 @@ class AngularSegments:
         tuple
             Tuple containing starting and ending points of radial lines.
         """
+
+        number_of_segments = number_of_segments * node_step
+
+        if number_of_segments < 36:
+            raise ValueError('Number of segments should be at least 36.')
+
         epi_nodes = spline_edges[-1].sample_nodes(number_of_segments)
 
         number_of_nodes = optimization_step * number_of_segments
