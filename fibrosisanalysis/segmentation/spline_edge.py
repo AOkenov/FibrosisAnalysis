@@ -134,5 +134,6 @@ class SplineEdge:
         np.ndarray
             Vector arrays
         """
-        direction = (np.roll(self.nodes, -1, axis=0) - self.nodes)
+        direction = (np.roll(self.ordered_nodes, -1, axis=0)
+                     - self.ordered_nodes)
         return direction

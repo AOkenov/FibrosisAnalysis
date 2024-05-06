@@ -32,10 +32,10 @@ class DistributionEllipseBuilder:
         ellipse_type : str, optional
             Type of the ellipse ('error' or 'confidence').
         """
-        r = np.concatenate((objects_props.axis_ratio,
-                            objects_props.axis_ratio))
-        theta = np.concatenate((objects_props.orientation,
-                                objects_props.orientation + np.pi))
+        r = np.concatenate((objects_props['axis_ratio'].values,
+                            objects_props['axis_ratio'].values))
+        theta = np.concatenate((objects_props['orientation'].values,
+                                objects_props['orientation'].values + np.pi))
 
         if len(r) < 10:
             self.distribution_ellipse = DistributionEllipse()

@@ -5,15 +5,13 @@ from skimage import measure, morphology, segmentation
 from fibrosisanalysis.segmentation.distance import Distance
 
 
-class ObjectsProperties:
-    def __init__(self, orientation=None, centroids=None, major_axis=None,
-                 minor_axis=None, axis_ratio=None, segment_labels=None):
-        self.orientation = orientation
-        self.centroids = centroids
-        self.major_axis = major_axis
-        self.minor_axis = minor_axis
-        self.axis_ratio = axis_ratio
-        self.segment_labels = segment_labels
+class ObjectsProperties(pd.DataFrame):
+    def __init__(self):
+        super().__init__()
+
+    @property
+    def centroids(self):
+        return np.array([self['centroid-0'], self['centroid-1']], dtype=int).T
 
 
 class ObjectsPropertiesBuilder:
@@ -39,7 +37,6 @@ class ObjectsPropertiesBuilder:
                                                       'major_axis_length',
                                                       'minor_axis_length',
                                                       'orientation'))
-        centroids = np.array([props['centroid-0'], props['centroid-1']]).T
         major_axis = props['major_axis_length']
         minor_axis = props['minor_axis_length']
         major_axis = np.where(major_axis >= 1, 0.5 * major_axis, 0.5)
@@ -47,13 +44,15 @@ class ObjectsPropertiesBuilder:
         orientation = 0.5 * np.pi - props['orientation']
 
         self.objects_props = ObjectsProperties()
-        self.objects_props.area = props['area']
-        self.objects_props.orientation = orientation
-        self.objects_props.centroids = centroids
-        self.objects_props.major_axis = major_axis
-        self.objects_props.minor_axis = minor_axis
-        self.objects_props.axis_ratio = major_axis / minor_axis
-        self.objects_props.segment_labels = 1
+
+        for k, v in props.items():
+            self.objects_props[k] = v
+
+        self.objects_props['orientation'] = orientation
+        self.objects_props['major_axis_length'] = major_axis
+        self.objects_props['minor_axis_length'] = minor_axis
+        self.objects_props['axis_ratio'] = major_axis / minor_axis
+        self.objects_props['segment_labels'] = 1
         return self.objects_props
 
     @staticmethod
@@ -88,22 +87,19 @@ class ObjectsPropertiesBuilder:
     def density(mask, intensity):
         return np.mean(intensity[mask])
 
-    def build_from_stats(self, heart_slice, min_area=10):
+    def build_from_stats(self, stats, min_area=10):
         """Selects objects with area greater than min_area and returns their
         properties in a dictionary. The properties are: orientation, centroids,
         axis_ratio, segment_labels.
 
         Parameters
         ----------
-        heart_slice : HeartSlice
-            HeartSlice object.
+        stats : pd.DataFrame
+            The statistics of the objects.
         min_area : int, optional
+            The minimum area of the object.
         """
-        stats = heart_slice.stats[heart_slice.stats['area'] >= min_area]
-        area = stats['area'].to_numpy(dtype=int)
-        centroids = stats[['centroid-0', 'centroid-1']].to_numpy(dtype=int)
-        orientation = stats['orientation'].to_numpy(dtype=float)
-        segment_labels = stats['segment'].to_numpy(dtype=int)
+        stats = stats[stats['area'] >= min_area]
 
         major_axis = stats['major_axis_length'].to_numpy(dtype=float)
         minor_axis = stats['minor_axis_length'].to_numpy(dtype=float)
@@ -113,24 +109,38 @@ class ObjectsPropertiesBuilder:
         orientation = stats['orientation'].to_numpy(dtype=float)
         orientation = np.where(orientation < 0, orientation + np.pi,
                                orientation)
-        fibrosis = stats['fibrosis'].to_numpy(dtype=float)
 
         self.objects_props = ObjectsProperties()
-        self.objects_props.area = area
-        self.objects_props.orientation = orientation
-        self.objects_props.centroids = centroids
-        self.objects_props.major_axis = major_axis
-        self.objects_props.minor_axis = minor_axis
-        self.objects_props.axis_ratio = axis_ratio
-        self.objects_props.segment_labels = segment_labels
-        self.objects_props.fibrosis = fibrosis
+
+        for k, v in stats.items():
+            self.objects_props[k] = v
+
+        self.objects_props['orientation'] = orientation
+        self.objects_props['major_axis_length'] = major_axis
+        self.objects_props['minor_axis_length'] = minor_axis
+        self.objects_props['axis_ratio'] = axis_ratio
         return self.objects_props
 
-    def select_by_segment(self, segment_index):
+    def add_slice_props(self, heart_slice):
+        """Adds segment id and fibrosis pecentage to objects properties.
+
+        Parameters
+        ----------
+        heart_slice : HeartSlice
+            The heart slice.
+        """
+        centroids = self.objects_props.centroids
+        self.objects_props['segment_labels'] = heart_slice.total_segments[tuple(centroids.T)]
+        self.objects_props['fibrosis'] = heart_slice.segment_fibrosis_map[tuple(centroids.T)]
+
+    @staticmethod
+    def select_by_segment(objects_props, segment_index):
         """Selects objects by segment index.
 
         Parameters
         ----------
+        objects_props : ObjectsProperties
+            The objects properties.
         segment_index : int
             The segment index.
 
@@ -140,13 +150,13 @@ class ObjectsPropertiesBuilder:
             The objects properties.
         """
         object_props = ObjectsProperties()
-        mask = self.objects_props.segment_labels == segment_index
-        object_props.area = self.objects_props.area[mask]
-        object_props.orientation = self.objects_props.orientation[mask]
-        object_props.centroids = self.objects_props.centroids[mask]
-        object_props.major_axis = self.objects_props.major_axis[mask]
-        object_props.minor_axis = self.objects_props.minor_axis[mask]
-        object_props.axis_ratio = self.objects_props.axis_ratio[mask]
-        object_props.segment_labels = self.objects_props.segment_labels[mask]
+        mask = objects_props.segment_labels == segment_index
+        object_props.area = objects_props.area[mask]
+        object_props.orientation = objects_props.orientation[mask]
+        object_props.centroids = objects_props.centroids[mask]
+        object_props.major_axis = objects_props.major_axis[mask]
+        object_props.minor_axis = objects_props.minor_axis[mask]
+        object_props.axis_ratio = objects_props.axis_ratio[mask]
+        object_props.segment_labels = objects_props.segment_labels[mask]
 
         return object_props

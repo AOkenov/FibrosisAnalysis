@@ -39,7 +39,7 @@ files = sorted([file.stem for file in files if not file.name.startswith('.')])
 
 
 n_radial_segments = 3
-n_angular_segments = 36
+n_angular_segments = 12
 node_step = 3
 
 anisotropy = []
@@ -47,31 +47,35 @@ edge_directions = []
 objects_orientations = []
 
 for slice_name in tqdm(files[:]):
+    # Load slice and build HeartSlice object
     heart_slice_builder = HeartSliceBuilder()
     heart_slice_builder.build_from_file(path, heart, slice_name,
                                         n_angular_segments, n_radial_segments,
                                         node_step)
-    # Load stats
-    stats_loader = StatsLoader(path_stats)
-    object_stats = stats_loader.load_slice_data(
-        path_stats.joinpath(heart, 'Stats', slice_name))
-
-    heart_slice_builder.add_stats(object_stats)
     heart_slice = heart_slice_builder.heart_slice
 
+    # Load stats
+    path_slice_stats = path_stats.joinpath(heart, 'Stats', slice_name)
+    stats_loader = StatsLoader(path_stats)
+    object_stats = stats_loader.load_slice_data(path_slice_stats)
+
+    # Build objects properties
     objects_props_builder = ObjectsPropertiesBuilder()
-    objects_props_builder.build_from_stats(heart_slice)
+    objects_props_builder.build_from_stats(object_stats)
+    objects_props_builder.add_slice_props(heart_slice)
     objects_props = objects_props_builder.objects_props
 
+    # Build segment properties
     segments_props_builder = SegmentsPropertiesBuilder()
-    segments_props_builder.build(heart_slice)
+    segments_props_builder.build(heart_slice, objects_props)
     segments_props = segments_props_builder.segments_properties
 
     edge_direction = segments_props.edge_direction
     objects_orientation = segments_props.objects_orientation
 
-    delta = (objects_orientation - edge_direction + 0.5 * np.pi) % np.pi - 0.5 * np.pi
-    objects_orientation = edge_direction + delta
+    # delta = (objects_orientation - edge_direction + 0.5 * np.pi) % np.pi - 0.5 * np.pi
+    # objects_orientation = edge_direction + delta
+    objects_orientation = segments_props.normed_objects_orientation
 
     edge_directions.append(edge_direction.reshape(3, -1))
     objects_orientations.append(objects_orientation.reshape(3, -1))

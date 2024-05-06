@@ -40,6 +40,42 @@ class HeartSlice:
         self.stats = None
 
     @property
+    def angular_segments_list(self):
+        """
+        The labels for angular segmentation.
+
+        Returns
+        -------
+        np.ndarray
+            The labels for angular segmentation.
+        """
+        return np.arange(1, self.angular_segments.max() + 1)
+
+    @property
+    def radial_segments_list(self):
+        """
+        The labels for radial segmentation.
+
+        Returns
+        -------
+        np.ndarray
+            The labels for radial segmentation.
+        """
+        return np.arange(1, self.radial_segments.max() + 1)
+
+    @property
+    def total_segments_list(self):
+        """
+        The labels for segmentation.
+
+        Returns
+        -------
+        np.ndarray
+            The labels for segmentation.
+        """
+        return np.arange(1, self.total_segments.max() + 1)
+
+    @property
     def total_segments(self):
         """
         The labels for segmentation.
