@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from matplotlib import colors, colormaps
 from skimage import morphology, segmentation
 
-from fibrosisanalysis.slice.heart_slice import HeartSliceBuilder
 from fibrosisanalysis.analysis.objects_properties import (
     ObjectsPropertiesBuilder
 )
@@ -12,6 +11,7 @@ from fibrosisanalysis.analysis.distribution_ellipses import (
     DistributionEllipseBuilder
 )
 from fibrosisanalysis.plots.polar_plots import PolarPlots
+from fibrosisanalysis.parsers import ImageLoader
 
 
 cmap = colors.LinearSegmentedColormap.from_list(
@@ -24,13 +24,21 @@ cmap_2 = colors.LinearSegmentedColormap.from_list(
                  (1, '#990102')])
 
 
+def rebase_angle(angle):
+    """
+    Swap axes for matplotlib.
+    """
+    return 0.5 * np.pi - angle
+
+
 def draw_anisotropy(ax, objects_props, n_std=2):
     dist_ellipse_builder = DistributionEllipseBuilder()
     dist_ellipse_builder.build(objects_props)
     dist_ellipse = dist_ellipse_builder.distribution_ellipse
-
+    dist_ellipse.full_theta = rebase_angle(dist_ellipse.full_theta)
+    dist_ellipse.orientation = rebase_angle(dist_ellipse.orientation)
     r, theta, d = PolarPlots.sort_by_density(objects_props.axis_ratio,
-                                             objects_props.orientation)
+                                             rebase_angle(objects_props.orientation))
 
     ax.scatter(theta, r, c=d, s=30, alpha=1, cmap='viridis')
     ax.plot(dist_ellipse.full_theta, dist_ellipse.full_radius, color='red')
@@ -51,14 +59,15 @@ def draw_segment(ax, image, objects_props):
 
     density_cmap = colormaps.get_cmap('viridis')
 
-    for i in range(len(objects_props.major_axis)):
+    for i in range(len(objects_props['major_axis_length'])):
         color = density_cmap(density[i] / density.max())
-        width = objects_props.major_axis[i]
-        height = objects_props.minor_axis[i]
-        alpha = objects_props.orientation[i]
-        xy = objects_props.centroids[i]
+        width = objects_props['major_axis_length'][i]
+        height = objects_props['minor_axis_length'][i]
+        alpha = objects_props['orientation'][i]
+        centroids = objects_props[['centroid-0', 'centroid-1']].to_numpy(int)
+        xy = centroids[i]
 
-        res = PolarPlots.rotated_ellipse(width, height, alpha)
+        res = PolarPlots.rotated_ellipse(width, height, 0.5 * np.pi - alpha)
         y, x = PolarPlots.polar_to_cartesian(*res)
         y += xy[1]
         x += xy[0]
@@ -67,26 +76,17 @@ def draw_segment(ax, image, objects_props):
     ax.axis('off')
 
 
-path = Path('/Users/arstanbek/Hulk/Arstan/analysis/data')
-path_stats = Path(
-    '/Users/arstanbek/Projects/fibrosis-workspace/fibrosisanalysis/examples/data')
+path = Path(__file__).parent.parent.parent.joinpath('data')
+path_stats = Path(__file__).parent.parent.parent.joinpath('data')
 
 heart = 'E11444_LMNA'
 slice_name = 'E11444_08_SC2'
 
-# heart = 'E11444_LMNA'
-# slice_name = 'E11444_10_SC2'
+image_loader = ImageLoader()
+image = image_loader.load_slice_data(path.joinpath(heart, 'Images',
+                                                   slice_name))
 
-n_radial_segments = 3
-n_angular_segments = 36
-node_step = 3
-
-heart_slice_builder = HeartSliceBuilder()
-heart_slice = heart_slice_builder.build_from_file(path, heart, slice_name,
-                                                  n_angular_segments,
-                                                  n_radial_segments, node_step)
-
-image = heart_slice.image[2400:2500, 970:1070]
+image = image[2400:2500, 970:1070]
 mask = image == 2
 
 objects_props_builder = ObjectsPropertiesBuilder()

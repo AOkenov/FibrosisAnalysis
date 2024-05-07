@@ -24,21 +24,23 @@ class SegmentsProperties:
     def __init__(self):
         self.segment_index = []
         self.centroids = []
-        self.objects_anisotropy = []
-        self.objects_orientation = []
+        self.structural_anisotropy = []
+        self.ellipse_orientation = []
         self.edge_direction = []
 
     @property
-    def normed_objects_orientation(self):
-        x_objects = np.cos(self.objects_orientation)
-        y_objects = np.sin(self.objects_orientation)
-        x_edge = np.cos(self.edge_direction)
-        y_edge = np.sin(self.edge_direction)
-        objects_orientation = np.arctan2(x_objects * y_edge - y_objects * x_edge,
-                                          x_objects * x_edge + y_objects * y_edge)
-        # objects_orientation = ((self.objects_orientation - self.edge_direction
-        #                         + 0.5 * np.pi) % np.pi - 0.5 * np.pi)
-        return objects_orientation
+    def relative_ellipse_orientation(self):
+        out = self.angle_between(self.edge_direction, self.ellipse_orientation)
+        return out
+
+    def angle_between(self, angle_0, angle_1):
+        """
+        Compute the angle between two angles.
+        """
+        theta = angle_0 - angle_1
+        theta[theta > 0] -= ((0.5 * np.pi + theta[theta > 0]) // np.pi) * np.pi
+        theta[theta < 0] += ((0.5 * np.pi - theta[theta < 0]) // np.pi) * np.pi
+        return theta
 
 
 class SegmentsPropertiesBuilder:
@@ -78,8 +80,8 @@ class SegmentsPropertiesBuilder:
             width.append(dist_ellipse.width)
             height.append(dist_ellipse.height)
 
-        self.segments_properties.objects_anisotropy = np.array(anisotropy)
-        self.segments_properties.objects_orientation = np.array(orientation)
+        self.segments_properties.structural_anisotropy = np.array(anisotropy)
+        self.segments_properties.ellipse_orientation = np.array(orientation)
         self.segments_properties.ellipse_width = np.array(width)
         self.segments_properties.ellipse_height = np.array(height)
         self.segments_properties.fibrosis = heart_slice.segment_fibrosis

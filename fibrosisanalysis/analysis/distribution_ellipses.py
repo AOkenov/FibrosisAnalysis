@@ -35,7 +35,7 @@ class DistributionEllipseBuilder:
         r = np.concatenate((objects_props['axis_ratio'].values,
                             objects_props['axis_ratio'].values))
         theta = np.concatenate((objects_props['orientation'].values,
-                                objects_props['orientation'].values + np.pi))
+                                np.pi + objects_props['orientation'].values))
 
         if len(r) < 10:
             self.distribution_ellipse = DistributionEllipse()

@@ -5,15 +5,6 @@ from skimage import measure, morphology, segmentation
 from fibrosisanalysis.segmentation.distance import Distance
 
 
-class ObjectsProperties(pd.DataFrame):
-    def __init__(self):
-        super().__init__()
-
-    @property
-    def centroids(self):
-        return np.array([self['centroid-0'], self['centroid-1']], dtype=int).T
-
-
 class ObjectsPropertiesBuilder:
     def __init__(self):
         self.objects_props = None
@@ -41,14 +32,15 @@ class ObjectsPropertiesBuilder:
         minor_axis = props['minor_axis_length']
         major_axis = np.where(major_axis >= 1, 0.5 * major_axis, 0.5)
         minor_axis = np.where(minor_axis >= 1, 0.5 * minor_axis, 0.5)
-        orientation = 0.5 * np.pi - props['orientation']
+        # # Swap axes due matplotlib plotting
+        # orientation = 0.5 * np.pi - props['orientation']
 
-        self.objects_props = ObjectsProperties()
+        self.objects_props = pd.DataFrame()
 
         for k, v in props.items():
             self.objects_props[k] = v
 
-        self.objects_props['orientation'] = orientation
+        # self.objects_props['orientation'] = orientation
         self.objects_props['major_axis_length'] = major_axis
         self.objects_props['minor_axis_length'] = minor_axis
         self.objects_props['axis_ratio'] = major_axis / minor_axis
@@ -107,10 +99,13 @@ class ObjectsPropertiesBuilder:
         minor_axis = np.where(minor_axis >= 1, 0.5 * minor_axis, 0.5)
         axis_ratio = major_axis / minor_axis
         orientation = stats['orientation'].to_numpy(dtype=float)
-        orientation = np.where(orientation < 0, orientation + np.pi,
-                               orientation)
+        # orientation = np.where(orientation < 0, orientation + np.pi,
+        #                        orientation)
 
-        self.objects_props = ObjectsProperties()
+        # Swap axes due matplotlib plotting
+        # orientation = 0.5 * np.pi - orientation
+
+        self.objects_props = pd.DataFrame()
 
         for k, v in stats.items():
             self.objects_props[k] = v
@@ -129,34 +124,6 @@ class ObjectsPropertiesBuilder:
         heart_slice : HeartSlice
             The heart slice.
         """
-        centroids = self.objects_props.centroids
+        centroids = self.objects_props[['centroid-0', 'centroid-1']].to_numpy(int)
         self.objects_props['segment_labels'] = heart_slice.total_segments[tuple(centroids.T)]
         self.objects_props['fibrosis'] = heart_slice.segment_fibrosis_map[tuple(centroids.T)]
-
-    @staticmethod
-    def select_by_segment(objects_props, segment_index):
-        """Selects objects by segment index.
-
-        Parameters
-        ----------
-        objects_props : ObjectsProperties
-            The objects properties.
-        segment_index : int
-            The segment index.
-
-        Returns
-        -------
-        ObjectsProperties
-            The objects properties.
-        """
-        object_props = ObjectsProperties()
-        mask = objects_props.segment_labels == segment_index
-        object_props.area = objects_props.area[mask]
-        object_props.orientation = objects_props.orientation[mask]
-        object_props.centroids = objects_props.centroids[mask]
-        object_props.major_axis = objects_props.major_axis[mask]
-        object_props.minor_axis = objects_props.minor_axis[mask]
-        object_props.axis_ratio = objects_props.axis_ratio[mask]
-        object_props.segment_labels = objects_props.segment_labels[mask]
-
-        return object_props

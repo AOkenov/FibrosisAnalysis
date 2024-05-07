@@ -38,17 +38,17 @@ def draw_ellipse(ax, rx, ry, dist_ellipse, n_std=2):
 
 
 def draw_points(ax, rx, ry, objects_props, segment_index, n_std=2):
+    objects_orientation = objects_props.orientation
     r, theta, density = PolarPlots.sort_by_density(objects_props.axis_ratio,
-                                                   objects_props.orientation)
+                                                   objects_orientation)
     y, x = PolarPlots.polar_to_cartesian(r, theta)
     x = n_std * 10 * x + rx
     y = n_std * 10 * y + ry
     ax.scatter(x, y, c=density, s=1)
 
 
-path = Path('/Users/arstanbek/Hulk/Arstan/analysis/data')
-path_stats = Path(
-    '/Users/arstanbek/Projects/fibrosis-workspace/fibrosisanalysis/examples/data')
+path = Path(__file__).parent.parent.parent.joinpath('data')
+path_stats = Path(__file__).parent.parent.parent.joinpath('data')
 
 heart = 'E11444_LMNA'
 slice_name = 'E11444_08_SC2'
@@ -57,31 +57,34 @@ slice_name = 'E11444_08_SC2'
 # slice_name = 'E11444_10_SC2'
 
 n_radial_segments = 3
-n_angular_segments = 36
+n_angular_segments = 12
 node_step = 3
 
 heart_slice_builder = HeartSliceBuilder()
 heart_slice_builder.build_from_file(path, heart, slice_name,
                                     n_angular_segments, n_radial_segments,
                                     node_step)
-# Load stats
-stats_loader = StatsLoader(path_stats)
-object_stats = stats_loader.load_slice_data(path_stats.joinpath(heart, 'Stats',
-                                                                slice_name))
-heart_slice_builder.add_stats(object_stats)
 heart_slice = heart_slice_builder.heart_slice
 
+# Load stats
+path_slice_stats = path_stats.joinpath(heart, 'Stats', slice_name)
+stats_loader = StatsLoader(path_stats)
+object_stats = stats_loader.load_slice_data(path_slice_stats)
+
+# Build objects properties
 objects_props_builder = ObjectsPropertiesBuilder()
-objects_props_builder.build_from_stats(heart_slice)
+objects_props_builder.build_from_stats(object_stats)
+objects_props_builder.add_slice_props(heart_slice)
 objects_props = objects_props_builder.objects_props
 
+# Build segment properties
 segments_props_builder = SegmentsPropertiesBuilder()
-segments_props_builder.build(heart_slice)
+segments_props_builder.build(heart_slice, objects_props)
 segments_props = segments_props_builder.segments_properties
 
 n_std = 2
 
-fig = plt.figure(figsize=(10, 8))
+fig = plt.figure(figsize=(8, 7))
 
 gs = fig.add_gridspec(2, 2, width_ratios=[1, 1], height_ratios=[1, 1],
                       left=0.05, right=0.95, bottom=0.05, top=0.95,
@@ -124,17 +127,16 @@ axs[1].set_xlim([y_min, y_max])
 axs[1].set_ylim([x_min + 0.2 * (x_max - x_min), x_max])
 
 for segment_index in range(1, heart_slice.total_segments.max() + 1):
-    objects_props = objects_props_builder.select_by_segment(segment_index)
-
+    segment_objects_props = objects_props[objects_props['segment_labels'] == segment_index]
     dist_ellipse_builder = DistributionEllipseBuilder()
-    dist_ellipse_builder.build(objects_props)
+    dist_ellipse_builder.build(segment_objects_props)
     dist_ellipse = dist_ellipse_builder.distribution_ellipse
 
     coords = np.argwhere(heart_slice.total_segments == segment_index)
     ry, rx = coords.mean(axis=0)
 
-    draw_points(axs[2], rx, ry, objects_props, segment_index)
-    draw_points(axs[3], rx, ry, objects_props, segment_index)
+    draw_points(axs[2], rx, ry, segment_objects_props, segment_index)
+    draw_points(axs[3], rx, ry, segment_objects_props, segment_index)
 
     draw_ellipse(axs[2], rx, ry, dist_ellipse)
     draw_ellipse(axs[3], rx, ry, dist_ellipse)
@@ -149,17 +151,17 @@ x = segments_props.centroids[:, 0]
 y = segments_props.centroids[:, 1]
 
 edge_direction = segments_props.edge_direction
-objects_orientation = segments_props.objects_orientation
 ellipse_width = segments_props.ellipse_width
 
-delta = (objects_orientation - edge_direction + 0.5 * np.pi) % np.pi - 0.5 * np.pi
-objects_orientation = edge_direction + delta
+ellipse_orientation = (edge_direction
+                       - segments_props.relative_ellipse_orientation)
+
 U = n_std * 10 * 0.5 * ellipse_width * np.cos(edge_direction)
 V = n_std * 10 * 0.5 * ellipse_width * np.sin(edge_direction)
 axs[3].quiver(y, x, V, U, scale_units='xy', scale=1, color='black')
 
-U = n_std * 10 * 0.5 * ellipse_width * np.cos(objects_orientation)
-V = n_std * 10 * 0.5 * ellipse_width * np.sin(objects_orientation)
+U = n_std * 10 * 0.5 * ellipse_width * np.cos(ellipse_orientation)
+V = n_std * 10 * 0.5 * ellipse_width * np.sin(ellipse_orientation)
 axs[3].quiver(y, x, V, U, scale_units='xy', scale=1, color='red')
 
 
@@ -171,5 +173,5 @@ axs[3].set_title('D', loc='left',
 
 plt.show()
 
-fig.savefig('paperfigures/figures/slice_anisotropy.png', dpi=300,
-            bbox_inches='tight')
+# fig.savefig('paperfigures/figures/slice_anisotropy.png', dpi=300,
+#             bbox_inches='tight')
