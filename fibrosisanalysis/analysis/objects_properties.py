@@ -70,12 +70,6 @@ class ObjectsPropertiesBuilder:
         return d_endo / (d_endo + d_epi)
 
     @staticmethod
-    def tangent(coords, edge_props):
-        edge_coords = edge_props[['centroid-0', 'centroid-1']].to_numpy()
-        _, inds = Distance.shortest(edge_coords, coords)
-        return edge_props['orientation'][inds].to_numpy()
-
-    @staticmethod
     def density(mask, intensity):
         return np.mean(intensity[mask])
 
@@ -124,6 +118,32 @@ class ObjectsPropertiesBuilder:
         heart_slice : HeartSlice
             The heart slice.
         """
-        centroids = self.objects_props[['centroid-0', 'centroid-1']].to_numpy(int)
-        self.objects_props['segment_labels'] = heart_slice.total_segments[tuple(centroids.T)]
-        self.objects_props['fibrosis'] = heart_slice.segment_fibrosis_map[tuple(centroids.T)]
+        centroids = self.objects_props[[
+            'centroid-0', 'centroid-1']].to_numpy(int)
+        self.objects_props['segment_labels'] = heart_slice.total_segments[tuple(
+            centroids.T)]
+        self.objects_props['fibrosis'] = heart_slice.segment_fibrosis_map[tuple(
+            centroids.T)]
+
+        edge_direction = self.edge_direction(heart_slice)
+        edge_direction = edge_direction[self.objects_props['segment_labels'] - 1]
+        self.objects_props['edge_direction'] = edge_direction
+        self.objects_props['relative_orientation'] = self.angle_between(
+            self.objects_props['edge_direction'],
+            self.objects_props['orientation'])
+
+    def angle_between(self, angle_0, angle_1):
+        """
+        Compute the angle between two angles.
+        """
+        theta = angle_0 - angle_1
+        theta[theta > 0] -= ((0.5 * np.pi + theta[theta > 0]) // np.pi) * np.pi
+        theta[theta < 0] += ((0.5 * np.pi - theta[theta < 0]) // np.pi) * np.pi
+        return theta
+
+    def edge_direction(self, heart_slice):
+        edge_direction = []
+        for spline_edge in heart_slice.spline_edges[1:]:
+            edge_direction.append(np.arctan2(spline_edge.direction[:, 1],
+                                             spline_edge.direction[:, 0]))
+        return np.concatenate(edge_direction)
