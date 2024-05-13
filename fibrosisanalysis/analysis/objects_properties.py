@@ -23,7 +23,8 @@ class ObjectsPropertiesBuilder:
         mask = segmentation.clear_border(mask)
         labels = measure.label(mask, connectivity=1)
         props = measure.regionprops_table(labels,
-                                          properties=('area',
+                                          properties=('label',
+                                                      'area',
                                                       'centroid',
                                                       'major_axis_length',
                                                       'minor_axis_length',
