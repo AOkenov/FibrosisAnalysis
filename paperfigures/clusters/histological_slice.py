@@ -121,7 +121,7 @@ def draw_lines(fig, ax0, ax1, x0, y0, x1, y1):
     x1, y1 = transFigure.transform(ax1.transData.transform([x1, y1]))
 
     line = mpl.lines.Line2D((x0, x1), (y0, y1),
-                            transform=fig.transFigure, lw=1, color='black')
+                            transform=fig.transFigure, lw=0.5, color='black')
 
     fig.lines.append(line)
 
