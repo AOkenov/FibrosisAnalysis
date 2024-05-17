@@ -21,13 +21,14 @@ def compute_props(labeled):
         mask = labeled == label
         perimeter.append(measure.perimeter_crofton(mask, directions=4))
         solitidy.append(measure.regionprops(mask.astype(int))[0].solidity)
-        area.append(mask.sum())
+        area.append(measure.regionprops(mask.astype(int))[0].area)
 
     perimeter = np.array(perimeter)
     solitidy = np.array(solitidy)
     area = np.array(area)
 
     complexity = perimeter ** 2 / (4 * np.pi * area)
+    # complexity /= solitidy
     return complexity, solitidy
 
 
