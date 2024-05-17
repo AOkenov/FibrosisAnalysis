@@ -34,26 +34,6 @@ image_loader = ImageLoader(path)
 image = image_loader.load_slice_data(path.joinpath(heart, 'Images',
                                                    slice_name))
 
-edge_loader = EdgeLoader(path)
-
-edges = {}
-
-for i, name in enumerate(['epi', 'endo']):
-    filename = '{}_{}'.format(slice_name, i)
-    nodes = edge_loader.load_slice_data(path.joinpath(heart, 'Edges',
-                                                      filename))
-
-    spline_edge = SplineEdge()
-    spline_edge.nodes = nodes[:, [1, 0]]
-    full_nodes = spline_edge.sample_nodes(100_000)
-    spline_edge.full_nodes = spline_edge.clip_boundaries(full_nodes,
-                                                         image.shape)
-    edges[name] = spline_edge
-
-n_r_segments = 6
-n_a_segments = 36
-
-
 # x0 = [[1400, 1128], [1227, 898]]
 # y0 = [[2313, 2858], [2192, 2729]]
 
@@ -146,7 +126,6 @@ image_1 = image[y1: y1 + dy1, x1: x1 + dx1]
 image_1 = clear_image(image_1, 10)
 
 colors = plt.cm.tab20(np.linspace(0, 1, 20))
-
 
 labeled = morphology.label(image_1 == 2, connectivity=1)
 labeled_masked = np.ma.masked_where(labeled == 0, labeled)
