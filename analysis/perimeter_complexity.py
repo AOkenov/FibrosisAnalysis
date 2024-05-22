@@ -12,7 +12,8 @@ from fibrosisanalysis.plots.point_density import PointDensity
 from fibrosisanalysis.morphology.erosion_segmentation import ErosionSegmentation
 
 
-path = Path(__file__).parents[1].joinpath('data')
+# path = Path(__file__).parents[1].joinpath('data')
+path = Path('/Users/arstanbek/Library/CloudStorage/OneDrive-UGent/data')
 
 heart = 'E11444_LMNA'
 slice_name = 'E11444_08_SC2'

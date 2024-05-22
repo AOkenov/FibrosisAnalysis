@@ -13,7 +13,9 @@ class PointDensity:
         return density
 
     @staticmethod
-    def sort_by_density(x, y):
+    def sort_by_density(x, y, index=False):
         density = PointDensity.gaussian_kde(x, y)
         idx = density.argsort()
+        if index:
+            return idx
         return x[idx], y[idx], density[idx]
