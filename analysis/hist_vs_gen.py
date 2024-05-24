@@ -10,6 +10,7 @@ from natsort import natsorted
 from fibrosisanalysis.parsers import ImageLoader
 from fibrosisanalysis.morphology.perimeter_complexity import PerimeterComplexity
 from fibrosisanalysis.morphology.erosion_segmentation import ErosionSegmentation
+    
 
 path = Path(__file__).parents[1].joinpath('data_gen')
 
@@ -17,7 +18,7 @@ files = [f.stem for f in path.joinpath('original_texs').glob('*.png')]
 files = natsorted([f for f in files if '200' in f])
 filename = files[0]
 collected_props = []
-collected_props_eroded = []
+collected_props_gen = []
 for filename in tqdm(files[:10]):
     image_loader = ImageLoader()
     image = image_loader.load_slice_data(path.joinpath('original_texs', filename))
@@ -35,43 +36,43 @@ for filename in tqdm(files[:10]):
     props = pd.DataFrame(props)
     collected_props.append(props)
 
-    eroded_labels = ErosionSegmentation().segment(mask)
-    eroded_props = measure.regionprops_table(eroded_labels, properties=props_list)
-    eroded_props['complexity'] = (eroded_props['perimeter_crofton'] ** 2
-                                  / (4 * np.pi * eroded_props['area']))
-    eroded_props['filename'] = filename
-    eroded_props = pd.DataFrame(eroded_props)
-    collected_props_eroded.append(eroded_props)
+    gen_labels = image_loader.load_slice_data(path.joinpath('gen_texs', filename))
+    gen_props = measure.regionprops_table(gen_labels, properties=props_list)
+    gen_props['complexity'] = (gen_props['perimeter_crofton'] ** 2
+                                  / (4 * np.pi * gen_props['area']))
+    gen_props['filename'] = filename
+    gen_props = pd.DataFrame(gen_props)
+    collected_props_gen.append(gen_props)
 
     fig, axs = plt.subplots(1, 2, figsize=(10, 5))
     axs[0].imshow(labeled, cmap='viridis')
     axs[0].set_title('Original')
-    axs[1].imshow(eroded_labels, cmap='viridis')
+    axs[1].imshow(gen_labels, cmap='viridis')
     axs[1].set_title('Eroded')
     plt.show()
 
     plt.figure()
     plt.scatter(props['solidity'], props['complexity'])
-    plt.scatter(eroded_props['solidity'], eroded_props['complexity'])
+    plt.scatter(gen_props['solidity'], gen_props['complexity'])
     plt.xlabel('Solidity')
     plt.ylabel('Complexity')
     # plt.yscale('log')
     plt.show()
 
 # collected_props = pd.concat(collected_props)
-# collected_props_eroded = pd.concat(collected_props_eroded)
+# collected_props_gen = pd.concat(collected_props_gen)
 
 # complexity_sum = collected_props.groupby('filename')['complexity'].sum()
 # print(complexity_sum)
 
-# complexity_sum_eroded = collected_props_eroded.groupby('filename')['complexity'].sum()
-# print(complexity_sum_eroded)
+# complexity_sum_gen = collected_props_gen.groupby('filename')['complexity'].sum()
+# print(complexity_sum_gen)
 
 # plt.figure()
 # plt.plot(complexity_sum)
 # plt.show()
 
 # plt.figure()
-# plt.plot(complexity_sum_eroded)
+# plt.plot(complexity_sum_gen)
 # plt.xticks(rotation=90)
 # plt.show()

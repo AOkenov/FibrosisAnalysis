@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from fibrosisanalysis.parsers.stats_loader import StatsLoader
 from fibrosisanalysis.plots.point_density import PointDensity
-from fibrosisanalysis.analysis.segment_properties import (
+from fibrosisanalysis.analysis.segments_properties import (
     StruturalAnisotrophy
 )
 from fibrosisanalysis.analysis.distribution_ellipses import (

@@ -4,13 +4,11 @@ import matplotlib.pyplot as plt
 from matplotlib import colors, colormaps
 from skimage import morphology, segmentation
 
-from fibrosisanalysis.analysis.objects_properties import (
-    ObjectsPropertiesBuilder
+from bitis.texture.properties import (
+    DistributionEllipseBuilder, 
+    PolarPlots,
+    PatternPropertiesBuilder
 )
-from fibrosisanalysis.analysis.distribution_ellipses import (
-    DistributionEllipseBuilder
-)
-from fibrosisanalysis.plots.polar_plots import PolarPlots
 from fibrosisanalysis.parsers import ImageLoader
 
 
@@ -24,9 +22,9 @@ cmap_2 = colors.LinearSegmentedColormap.from_list(
                  (1, '#990102')])
 
 
-def rebase_angle(angle):
+def swap_axis(angle):
     """
-    Swap axes for matplotlib.
+    Swap axis for polar plot.
     """
     return 0.5 * np.pi - angle
 
@@ -35,27 +33,29 @@ def draw_anisotropy(ax, objects_props, n_std=2):
     dist_ellipse_builder = DistributionEllipseBuilder()
     dist_ellipse_builder.build(objects_props)
     dist_ellipse = dist_ellipse_builder.distribution_ellipse
-    dist_ellipse.full_theta = rebase_angle(dist_ellipse.full_theta)
-    dist_ellipse.orientation = rebase_angle(dist_ellipse.orientation)
+    full_theta = swap_axis(dist_ellipse.full_theta)
+    orientation = swap_axis(dist_ellipse.orientation)
     r, theta, d = PolarPlots.sort_by_density(objects_props.axis_ratio,
-                                             rebase_angle(objects_props.orientation))
+                                             swap_axis(objects_props.orientation))
 
     ax.scatter(theta, r, c=d, s=30, alpha=1, cmap='viridis')
-    ax.plot(dist_ellipse.full_theta, dist_ellipse.full_radius, color='red')
+    ax.plot(full_theta, dist_ellipse.full_radius, color='red')
 
-    ax.quiver(0, 0, dist_ellipse.orientation, 0.5 * dist_ellipse.width,
+    ax.quiver(0, 0, orientation, 0.5 * dist_ellipse.width,
               angles='xy', scale_units='xy', scale=1, color='red')
-    ax.quiver(0, 0, 0.5 * np.pi + dist_ellipse.orientation,
+    ax.quiver(0, 0, 0.5 * np.pi + orientation,
               0.5 * dist_ellipse.height,
               angles='xy', scale_units='xy', scale=1, color='red')
 
 
 def draw_segment(ax, image, objects_props):
 
+    print(objects_props.head())
+
     ax.imshow(image, cmap=cmap, origin='lower')
 
-    _, _, density = PolarPlots.point_density(objects_props.axis_ratio,
-                                             objects_props.orientation)
+    _, _, density = PolarPlots.point_density(objects_props['axis_ratio'],
+                                             objects_props['orientation'])
 
     density_cmap = colormaps.get_cmap('viridis')
 
@@ -89,8 +89,9 @@ image = image_loader.load_slice_data(path.joinpath(heart, 'Images',
 image = image[2400:2500, 970:1070]
 mask = image == 2
 
-objects_props_builder = ObjectsPropertiesBuilder()
-objects_props = objects_props_builder.build_from_segment(mask)
+objects_props_builder = PatternPropertiesBuilder(area_min=10)
+pattern_props = objects_props_builder.build(mask, clear_border=True)
+objects_props = pattern_props.objects_props
 
 mask = morphology.remove_small_objects(mask, 10)
 mask = segmentation.clear_border(mask)

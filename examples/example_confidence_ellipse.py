@@ -5,7 +5,7 @@ from scipy import stats
 from fibrosisanalysis.analysis.distribution_ellipses import (
     DistributionEllipses
 )
-from fibrosisanalysis.analysis.segment_properties import (
+from fibrosisanalysis.analysis.segments_properties import (
     StruturalAnisotrophy
 )
 from fibrosisanalysis.plots.point_density import PointDensity

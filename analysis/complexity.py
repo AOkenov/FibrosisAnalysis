@@ -16,8 +16,8 @@ def fibrosis_density(image, intensity):
     return intensity[image > 0].mean()
 
 
-# path = Path(__file__).parents[1].joinpath('data')
-path = Path('/Users/arstanbek/Library/CloudStorage/OneDrive-UGent/data')
+path = Path(__file__).parents[1].joinpath('data')
+# path = Path('/Users/arstanbek/Library/CloudStorage/OneDrive-UGent/data')
 
 heart = 'E11444_LMNA'
 slice_name = 'E11444_08_SC2'
@@ -48,7 +48,7 @@ props = pd.DataFrame(props)
 
 props['complexity'].fillna(1, inplace=True)
 
-df = props[(props['area'] > 10) & (props['fibrosis_density'] > 0.2) & (props['fibrosis_density'] < 0.3)]
+df = props[(props['area'] > 10)]
 area = df['area'].values
 complexity = df['complexity'].values
 solidity = df['solidity'].values
@@ -62,7 +62,7 @@ complexity_f, fibrosis_f, dens_f = PointDensity.sort_by_density(complexity,
 
 
 # classifier = neighbors.LocalOutlierFactor(n_neighbors=20)
-classifier = ensemble.IsolationForest(contamination=0.1)
+classifier = ensemble.IsolationForest(contamination=0.1, max_samples=256)
 outliers = classifier.fit_predict(df[['complexity',
                                       'solidity']].values)
 
@@ -134,6 +134,7 @@ axs['solidity'].set_title('Solidity')
 axs['density'].imshow(density_map, cmap='viridis', origin='lower')
 axs['density'].set_title('Density')
 
-axs['complexity'].imshow(complexity_map, cmap='viridis', origin='lower')
+axs['complexity'].imshow(complexity_map, cmap='viridis', origin='lower',
+                         vmin=1, vmax=20)
 axs['complexity'].set_title('Complexity')
 plt.show()
