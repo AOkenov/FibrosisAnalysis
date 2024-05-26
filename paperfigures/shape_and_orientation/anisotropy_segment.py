@@ -5,10 +5,10 @@ from matplotlib import colors, colormaps
 from skimage import morphology, segmentation
 
 from bitis.texture.properties import (
-    DistributionEllipseBuilder, 
-    PolarPlots,
-    PatternPropertiesBuilder
+    DistributionEllipseBuilder,
+    PolarPlots
 )
+from bitis.texture.analysis import ObjectAnalysis
 from fibrosisanalysis.parsers import ImageLoader
 
 
@@ -31,8 +31,7 @@ def swap_axis(angle):
 
 def draw_anisotropy(ax, objects_props, n_std=2):
     dist_ellipse_builder = DistributionEllipseBuilder()
-    dist_ellipse_builder.build(objects_props)
-    dist_ellipse = dist_ellipse_builder.distribution_ellipse
+    dist_ellipse = dist_ellipse_builder.build(objects_props)
     full_theta = swap_axis(dist_ellipse.full_theta)
     orientation = swap_axis(dist_ellipse.orientation)
     r, theta, d = PolarPlots.sort_by_density(objects_props.axis_ratio,
@@ -49,22 +48,19 @@ def draw_anisotropy(ax, objects_props, n_std=2):
 
 
 def draw_segment(ax, image, objects_props):
+    ax.imshow(image, cmap=cmap, origin='lower', vmin=0, vmax=2)
+    inds, density = PolarPlots.sorting_idx(objects_props['axis_ratio'].values,
+                                           objects_props['orientation'].values)
 
-    print(objects_props.head())
+    colors = colormaps.get_cmap('viridis')
 
-    ax.imshow(image, cmap=cmap, origin='lower')
-
-    _, _, density = PolarPlots.point_density(objects_props['axis_ratio'],
-                                             objects_props['orientation'])
-
-    density_cmap = colormaps.get_cmap('viridis')
-
-    for i in range(len(objects_props['major_axis_length'])):
-        color = density_cmap(density[i] / density.max())
-        width = objects_props['major_axis_length'][i]
-        height = objects_props['minor_axis_length'][i]
-        alpha = objects_props['orientation'][i]
-        centroids = objects_props[['centroid-0', 'centroid-1']].to_numpy(int)
+    for i, dens in zip(inds, density):
+        color = colors(dens / density.max())
+        width = objects_props['major_axis_length'].iloc[i]
+        height = objects_props['minor_axis_length'].iloc[i]
+        alpha = objects_props['orientation'].iloc[i]
+        print(objects_props[['centroid-0', 'centroid-1']])
+        centroids = objects_props[['centroid-0', 'centroid-1']].values
         xy = centroids[i]
 
         res = PolarPlots.rotated_ellipse(width, height, 0.5 * np.pi - alpha)
@@ -76,8 +72,11 @@ def draw_segment(ax, image, objects_props):
     ax.axis('off')
 
 
-path = Path(__file__).parent.parent.parent.joinpath('data')
-path_stats = Path(__file__).parent.parent.parent.joinpath('data')
+# path = Path(__file__).parent.parent.parent.joinpath('data')
+# path_stats = Path(__file__).parent.parent.parent.joinpath('data')
+
+path = Path('/Users/arstanbek/Library/CloudStorage/OneDrive-UGent/data')
+path_stats = path
 
 heart = 'E11444_LMNA'
 slice_name = 'E11444_08_SC2'
@@ -89,13 +88,13 @@ image = image_loader.load_slice_data(path.joinpath(heart, 'Images',
 image = image[2400:2500, 970:1070]
 mask = image == 2
 
-objects_props_builder = PatternPropertiesBuilder(area_min=10)
-pattern_props = objects_props_builder.build(mask, clear_border=True)
-objects_props = pattern_props.objects_props
-
 mask = morphology.remove_small_objects(mask, 10)
 mask = segmentation.clear_border(mask)
 image[(mask == 0) & (image > 0)] = 1
+image[mask == 0] = 1
+
+objects_analysis = ObjectAnalysis()
+objects_props = objects_analysis.build_props(mask)
 
 n_std = 2
 
