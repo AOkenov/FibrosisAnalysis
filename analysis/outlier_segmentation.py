@@ -33,10 +33,10 @@ props = measure.regionprops_table(labeled, properties=('label', 'area',
                                                        'perimeter_crofton',
                                                        'area_convex'))
 props['complexity'] = (props['perimeter_crofton'] ** 2
-                       / (4 * np.pi * props['area_convex']))
+                       / (4 * np.pi * props['area']))
 
 props = pd.DataFrame(props)
-props['complexity'].fillna(1, inplace=True)
+props.fillna({'complexity': 1}, inplace=True)
 
 print(props.head())
 
@@ -90,11 +90,30 @@ plt.show()
 
 outliers = classifier.predict(props[['complexity', 'solidity']].values)
 
-area_mask = outliers.flatten() == -1
+area_mask = outliers.flatten() > -2
 
-area_mask &= props['area'].values > 10
+area_mask &= (props['area'].values > 1000) & (props['area'].values < 1300)
+
 area_mask_map = area_mask[labeled - 1]
 area_mask_map[labeled == 0] = 0
+
+outliers_map = outliers[labeled - 1]
+outliers_map[area_mask_map == 0] = 0
+
+eroded_mask = ErosionSegmentation.segment(area_mask_map)
+
+for i, im in enumerate(props['image'][area_mask].values):
+
+    eroded = ErosionSegmentation.segment(im > 0)
+    eroded_label = measure.label(eroded, connectivity=1)
+    fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+    axs[0].imshow(im, cmap='viridis', origin='lower')
+    axs[0].set_title('Original')
+    axs[1].imshow(eroded_label, cmap='viridis', origin='lower')
+    axs[1].set_title('Segmented')
+    plt.show()
+
+    fig.savefig(f'segmented_{i}.png', dpi=300)
 
 complexity_map = props['complexity'].values[labeled - 1]
 complexity_map[area_mask_map == 0] = 0
@@ -115,10 +134,10 @@ axs = fig.subplot_mosaic([['image', 'area'],
 axs['image'].imshow(image, cmap='viridis', origin='lower')
 axs['image'].set_title('Image')
 
-axs['solidity'].imshow(solidity_map, cmap='viridis', origin='lower')
+axs['solidity'].imshow(outliers_map, cmap='viridis', origin='lower')
 axs['solidity'].set_title('Solidity')
 
-axs['area'].imshow(area_map, cmap='viridis', origin='lower')
+axs['area'].imshow(eroded_mask, cmap='viridis', origin='lower')
 axs['area'].set_title('Area')
 
 axs['complexity'].imshow(complexity_map, cmap='viridis', origin='lower')

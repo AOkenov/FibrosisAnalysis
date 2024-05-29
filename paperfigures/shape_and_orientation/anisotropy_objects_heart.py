@@ -2,6 +2,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+from scipy import stats
 from matplotlib import colors, ticker
 
 from fibrosisanalysis.parsers.stats_loader import StatsLoader
@@ -59,10 +61,10 @@ for heart, _ in hearts.items():
         objects_props_builder = ObjectsPropertiesBuilder()
         objects_props_builder.build_from_stats(object_stats)
         objects_props_builder.add_slice_props(heart_slice)
-        objects_props = objects_props_builder.objects_props.loc[:,
-                                                                ['segment_labels',
-                                                                 'relative_orientation',
-                                                                 'axis_ratio']]
+        objects_props = objects_props_builder.objects_props
+        objects_props = objects_props.loc[:, ['segment_labels',
+                                              'relative_orientation',
+                                              'axis_ratio']]
 
         objects_props['location'] = pd.cut(objects_props['segment_labels'],
                                            bins=np.linspace(0, n_angular_segments * n_radial_segments,
@@ -135,8 +137,8 @@ plt.subplots_adjust(top=0.9, bottom=0.1, right=0.98, left=0.1,
                     wspace=0.4, hspace=0.2)
 plt.show()
 
-fig.savefig(path_save.joinpath('clusters_orientation.png'), dpi=300,
-            bbox_inches='tight')
+# fig.savefig(path_save.joinpath('clusters_orientation.png'), dpi=300,
+#             bbox_inches='tight')
 
 
 bins = np.linspace(1, 5, 17)
@@ -148,11 +150,24 @@ fig, axs = plt.subplots(ncols=4, nrows=3, sharex=True, sharey=True,
 for i, (heart, label) in enumerate(hearts.items()):
     for j, location in enumerate(['SUB-ENDO', 'MID', 'SUB-EPI']):
         data = grouped.get_group((heart, location))
+
         count, _ = np.histogram(data['axis_ratio'].values, bins=bins)
         count = count / len(data['axis_ratio'].values)
 
+        params = stats.lognorm.fit(data['axis_ratio'].values)
+        lognorm_y = stats.lognorm.pdf(bins, *params)
+        lognorm_y = count.max() * lognorm_y / lognorm_y.max()
+
+        print(heart, ': ', location)
+        print('-----------------------------------------')
+        print(params)
+        print(stats.lognorm.median(*params))
+        print(stats.lognorm.mean(*params))
+        print(stats.lognorm.std(*params))
+
         axs[j, i].bar(bins[:-1], count, width=0.25, align='edge',
                       color=colors_[j], edgecolor='black', alpha=0.5)
+        axs[j, i].plot(bins, lognorm_y, color='black', lw=1)
         axs[j, i].set_xlim(1, 5)
         axs[j, i].yaxis.set_major_formatter(ticker.FuncFormatter(percent_formatter))
 
@@ -175,5 +190,5 @@ for i, (_, label) in enumerate(hearts.items()):
 
 plt.show()
 
-fig.savefig(path_save.joinpath('axis_ratio.png'), dpi=300,
-            bbox_inches='tight')
+# fig.savefig(path_save.joinpath('axis_ratio.png'), dpi=300,
+#             bbox_inches='tight')

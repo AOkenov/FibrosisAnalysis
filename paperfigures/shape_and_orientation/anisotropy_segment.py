@@ -59,7 +59,6 @@ def draw_segment(ax, image, objects_props):
         width = objects_props['major_axis_length'].iloc[i]
         height = objects_props['minor_axis_length'].iloc[i]
         alpha = objects_props['orientation'].iloc[i]
-        print(objects_props[['centroid-0', 'centroid-1']])
         centroids = objects_props[['centroid-0', 'centroid-1']].values
         xy = centroids[i]
 
@@ -72,10 +71,8 @@ def draw_segment(ax, image, objects_props):
     ax.axis('off')
 
 
-# path = Path(__file__).parent.parent.parent.joinpath('data')
-# path_stats = Path(__file__).parent.parent.parent.joinpath('data')
-
-path = Path('/Users/arstanbek/Library/CloudStorage/OneDrive-UGent/data')
+path = Path(__file__).parent.parent.parent.joinpath('data')
+# path = Path('/Users/arstanbek/Library/CloudStorage/OneDrive-UGent/data')
 path_stats = path
 
 heart = 'E11444_LMNA'

@@ -28,13 +28,15 @@ class ErosionSegmentation:
 
         segmented = segmentation.watershed(-distance, markers,
                                            mask=image,
-                                           watershed_line=False)
+                                           watershed_line=True)
+        
+        return segmented > 0
 
-        non_segmented = image.copy()
-        non_segmented[segmented > 0] = 0
-        non_segmented_label, n = measure.label(non_segmented, connectivity=1,
-                                               return_num=True)
+        # non_segmented = image.copy()
+        # non_segmented[segmented > 0] = 0
+        # non_segmented_label, n = measure.label(non_segmented, connectivity=1,
+        #                                        return_num=True)
 
-        non_segmented_label[segmented > 0] = n + segmented[segmented > 0]
+        # non_segmented_label[segmented > 0] = n + segmented[segmented > 0]
 
-        return non_segmented_label
+        # return non_segmented_label

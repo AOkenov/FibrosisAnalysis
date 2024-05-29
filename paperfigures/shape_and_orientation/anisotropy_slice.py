@@ -3,11 +3,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colors
 
+from bitis.texture.properties import DistributionEllipseBuilder
+
 from fibrosisanalysis.parsers.stats_loader import StatsLoader
 from fibrosisanalysis.slice.heart_slice import HeartSliceBuilder
 from fibrosisanalysis.analysis import (
     ObjectsPropertiesBuilder,
-    DistributionEllipseBuilder,
     SegmentsPropertiesBuilder
 )
 from fibrosisanalysis.plots.polar_plots import PolarPlots
@@ -38,9 +39,8 @@ def draw_ellipse(ax, rx, ry, dist_ellipse, n_std=2):
 
 
 def draw_points(ax, rx, ry, objects_props, segment_index, n_std=2):
-    objects_orientation = objects_props.orientation
-    r, theta, density = PolarPlots.sort_by_density(objects_props.axis_ratio,
-                                                   objects_orientation)
+    r, theta, density = PolarPlots.sort_by_density(objects_props['axis_ratio'],
+                                                   objects_props['orientation'])
     y, x = PolarPlots.polar_to_cartesian(r, theta)
     x = n_std * 10 * x + rx
     y = n_std * 10 * y + ry
@@ -48,7 +48,7 @@ def draw_points(ax, rx, ry, objects_props, segment_index, n_std=2):
 
 
 path = Path(__file__).parent.parent.parent.joinpath('data')
-path_stats = Path(__file__).parent.parent.parent.joinpath('data')
+path_stats = path
 
 heart = 'E11444_LMNA'
 slice_name = 'E11444_08_SC2'
@@ -80,7 +80,7 @@ objects_props = objects_props_builder.objects_props
 # Build segment properties
 segments_props_builder = SegmentsPropertiesBuilder()
 segments_props_builder.build(heart_slice, objects_props)
-segments_props = segments_props_builder.segments_properties
+segments_props = segments_props_builder.props
 
 n_std = 2
 
@@ -130,7 +130,7 @@ for segment_index in range(1, heart_slice.total_segments.max() + 1):
     segment_objects_props = objects_props[objects_props['segment_labels'] == segment_index]
     dist_ellipse_builder = DistributionEllipseBuilder()
     dist_ellipse_builder.build(segment_objects_props)
-    dist_ellipse = dist_ellipse_builder.distribution_ellipse
+    dist_ellipse = dist_ellipse_builder.dist_ellipse
 
     coords = np.argwhere(heart_slice.total_segments == segment_index)
     ry, rx = coords.mean(axis=0)
@@ -147,14 +147,14 @@ for segment_index in range(1, heart_slice.total_segments.max() + 1):
         draw_text(axs[1], rx, ry, segment_index)
 
 
-x = segments_props.centroids[:, 0]
-y = segments_props.centroids[:, 1]
+x = segments_props['centroid-0']
+y = segments_props['centroid-1']
 
-edge_direction = segments_props.edge_direction
-ellipse_width = segments_props.ellipse_width
+edge_direction = segments_props['edge_direction']
+ellipse_width = segments_props['sa_major_axis']
 
 ellipse_orientation = (edge_direction
-                       - segments_props.relative_ellipse_orientation)
+                       - segments_props['relative_orientation'])
 
 U = n_std * 10 * 0.5 * ellipse_width * np.cos(edge_direction)
 V = n_std * 10 * 0.5 * ellipse_width * np.sin(edge_direction)

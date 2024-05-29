@@ -47,7 +47,7 @@ for heart, _ in hearts.items():
     anisotropy_ = []
     edge_directions_ = []
     objects_orientations_ = []
-    for slice_name in tqdm(files[:]):
+    for slice_name in tqdm(files[:2]):
         # Load slice and build HeartSlice object
         heart_slice_builder = HeartSliceBuilder()
         heart_slice_builder.build_from_file(path, heart, slice_name,
@@ -69,14 +69,15 @@ for heart, _ in hearts.items():
         # Build segment properties
         segments_props_builder = SegmentsPropertiesBuilder()
         segments_props_builder.build(heart_slice, objects_props)
-        segments_props = segments_props_builder.segments_properties
+        segments_props = segments_props_builder.props
 
-        edge_direction = segments_props.edge_direction
-        objects_orientation = segments_props.relative_ellipse_orientation
+        edge_direction = segments_props['edge_direction'].values
+        objects_orientation = segments_props['relative_orientation'].values
+        sa = segments_props['structural_anisotropy'].values
 
         edge_directions_.append(edge_direction.reshape(3, -1))
         objects_orientations_.append(objects_orientation.reshape(3, -1))
-        anisotropy_.append(segments_props.structural_anisotropy.reshape(3, -1))
+        anisotropy_.append(sa.reshape(3, -1))
 
     anisotropy[heart] = np.concatenate(anisotropy_, axis=1)
     edge_directions[heart] = np.concatenate(edge_directions_, axis=1)
@@ -134,8 +135,8 @@ plt.subplots_adjust(top=0.9, bottom=0.1, right=0.98, left=0.1,
                     wspace=0.4, hspace=0.2)
 plt.show()
 
-fig.savefig(path_save.joinpath('orientation.png'), dpi=300,
-            bbox_inches='tight')
+# fig.savefig(path_save.joinpath('orientation.png'), dpi=300,
+#             bbox_inches='tight')
 
 
 bins = np.linspace(1, 5, 20)
@@ -169,5 +170,5 @@ for i, (_, label) in enumerate(hearts.items()):
 
 plt.show()
 
-fig.savefig(path_save.joinpath('structural_anisotropy.png'), dpi=300,
-            bbox_inches='tight')
+# fig.savefig(path_save.joinpath('structural_anisotropy.png'), dpi=300,
+#             bbox_inches='tight')

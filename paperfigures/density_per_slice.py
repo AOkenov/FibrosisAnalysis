@@ -26,6 +26,8 @@ for heart in hearts[:]:
     slice_names = Path(path.joinpath(heart, 'Stats')).glob('*')
     slice_names = sorted([f.stem for f in slice_names if f.suffix == '.pkl'])
 
+    print(slice_names)
+
     density = []
 
     total_pixels = 0
@@ -91,7 +93,7 @@ for i, heart in enumerate(sorted_hearts):
     ax.yaxis.set_major_formatter(ticker.FuncFormatter(percent_formatter))
 
     if heart in sorted_hearts[7:]:
-        ax.set_xlabel('Slice Index')
+        ax.set_xlabel('Apex -> Base')
 
     if heart in [*sorted_hearts[:2], sorted_hearts[4], sorted_hearts[7]]:
         ax.set_ylabel('Fibrotic Pixels')

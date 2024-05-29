@@ -27,7 +27,7 @@ class SegmentsPropertiesBuilder:
         centroids = self.compute_centroids(segment_map)
         edge_direction = self.edge_direction(spline_edges)
 
-        props = pd.DataFrame()
+        props = {}
         props['segment_labels'] = heart_slice.total_segments_list
         props['centroid-0'] = centroids[:, 0]
         props['centroid-1'] = centroids[:, 1]
@@ -39,25 +39,25 @@ class SegmentsPropertiesBuilder:
         height = []
 
         for i in heart_slice.total_segments_list:
-            props = objects_props[objects_props['segment_labels'] == i]
+            selected_props = objects_props[objects_props['segment_labels'] == i]
 
-            dist_ellipse = DistributionEllipseBuilder().build(props)
+            dist_ellipse = DistributionEllipseBuilder().build(selected_props)
 
             anisotropy.append(dist_ellipse.anisotropy)
             orientation.append(dist_ellipse.orientation)
             width.append(dist_ellipse.width)
             height.append(dist_ellipse.height)
-
+  
         props['structural_anisotropy'] = np.array(anisotropy)
         props['sa_orientation'] = np.array(orientation)
         props['sa_major_axis'] = np.array(width)
-        props['sa_minor_axis_'] = np.array(height)
+        props['sa_minor_axis'] = np.array(height)
         props['fibrosis'] = heart_slice.segment_fibrosis
 
         props['relative_orientation'] = self.angle_between(
             props['edge_direction'], props['sa_orientation'])
 
-        self.props = props
+        self.props = pd.DataFrame(props)
         return self.props
 
     def angle_between(self, angle_0, angle_1):
