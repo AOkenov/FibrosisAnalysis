@@ -116,7 +116,13 @@ class HeartSlice:
         index = np.arange(1, self.total_segments.max() + 1)
         labels = self.total_segments.copy()
         labels[self.image == 0] = 0
-        return ndimage.mean(self.image, labels, index) - 1
+        mask = (self.image == 2).astype(float)
+        label_index = np.unique(labels[labels > 0])
+
+        out = np.zeros_like(index, dtype=float)
+        out[np.isin(index, label_index)] = ndimage.mean(mask, labels,
+                                                        label_index)
+        return out
 
     @property
     def segment_fibrosis_map(self):
