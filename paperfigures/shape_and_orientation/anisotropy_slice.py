@@ -1,7 +1,7 @@
 from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import colors
+from matplotlib import colors, lines
 
 from bitis.texture.properties import DistributionEllipseBuilder
 
@@ -25,9 +25,9 @@ cmap_2 = colors.LinearSegmentedColormap.from_list(
 
 
 def draw_text(ax, rx, ry, text):
-    ax.text(rx, ry, str(text), color='black', fontsize=8,
+    ax.text(rx, ry, str(text), color='black', fontsize=7,
             bbox=dict(facecolor='white', edgecolor='white',
-                      boxstyle='round, pad=0.2'),
+                      boxstyle='round, pad=0.1'),
             ha='center', va='center')
 
 
@@ -47,7 +47,21 @@ def draw_points(ax, rx, ry, objects_props, segment_index, n_std=2):
     ax.scatter(x, y, c=density, s=1)
 
 
-path = Path(__file__).parent.parent.parent.joinpath('data')
+def draw_lines(fig, ax0, ax1, x0, y0, x1, y1, lw=0.5):
+    fig.canvas.draw()
+    transFigure = fig.transFigure.inverted()
+
+    x0, y0 = transFigure.transform(ax0.transData.transform([x0, y0]))
+    x1, y1 = transFigure.transform(ax1.transData.transform([x1, y1]))
+
+    line = lines.Line2D((x0, x1), (y0, y1),
+                        transform=fig.transFigure, lw=lw, color='black')
+
+    fig.lines.append(line)
+
+
+# path = Path(__file__).parent.parent.parent.joinpath('data')
+path = Path('/Users/arstanbek/Library/CloudStorage/OneDrive-UGent/data')
 path_stats = path
 
 heart = 'E11444_LMNA'
@@ -56,13 +70,13 @@ slice_name = 'E11444_08_SC2'
 # heart = 'E11444_LMNA'
 # slice_name = 'E11444_10_SC2'
 
-n_radial_segments = 3
-n_angular_segments = 12
-node_step = 3
+n_radial = 3
+n_angular = 12
+node_step = 10
 
 heart_slice_builder = HeartSliceBuilder()
 heart_slice_builder.build_from_file(path, heart, slice_name,
-                                    n_angular_segments, n_radial_segments,
+                                    n_angular, n_radial,
                                     node_step)
 heart_slice = heart_slice_builder.heart_slice
 
@@ -83,95 +97,146 @@ segments_props_builder.build(heart_slice, objects_props)
 segments_props = segments_props_builder.props
 
 n_std = 2
+segment_indexes = np.array([3, 15, 27])
 
 fig = plt.figure(figsize=(8, 7))
 
-gs = fig.add_gridspec(2, 2, width_ratios=[1, 1], height_ratios=[1, 1],
-                      left=0.05, right=0.95, bottom=0.05, top=0.95,
-                      wspace=0.05, hspace=0.2)
-axs = []
-axs.append(fig.add_subplot(gs[0, 0]))
-axs.append(fig.add_subplot(gs[1, 0]))
-axs.append(fig.add_subplot(gs[0, 1], sharex=axs[0], sharey=axs[0]))
-axs.append(fig.add_subplot(gs[1, 1], sharex=axs[1], sharey=axs[1]))
+axs = fig.subplot_mosaic([['segments', 'segments_zoom'],
+                          ['sa', 'sa_zoom']])
 
-for ax in axs[:]:
+axs['segments'].sharex(axs['sa'])
+axs['segments'].sharey(axs['sa'])
+axs['segments_zoom'].sharex(axs['sa_zoom'])
+axs['segments_zoom'].sharey(axs['sa_zoom'])
+
+for subplot in ['segments', 'sa']:
+    ax = axs[subplot]
+    index = segment_indexes[0]
+    start = (index - 1) * node_step
+    end = index * node_step + 1
     for spline_edge in heart_slice.spline_edges:
         ax.plot(spline_edge.full_nodes[:, 1],
                 spline_edge.full_nodes[:, 0],
                 'k', lw=0.5)
 
-    for k in range(len(heart_slice.spline_edges[0].ordered_nodes)):
+        ax.plot(spline_edge.nodes[start:end, 1],
+                spline_edge.nodes[start:end, 0],
+                'k', lw=1.)
+        axs['sa_zoom'].plot(spline_edge.nodes[start:end, 1],
+                            spline_edge.nodes[start:end, 0],
+                            'k', lw=1.)
+        axs['segments_zoom'].plot(spline_edge.nodes[start:end, 1],
+                                  spline_edge.nodes[start:end, 0],
+                                  'k', lw=1.)
+
+    for k in range(n_angular):
         x = [heart_slice.spline_edges[0].ordered_nodes[k, 1],
              heart_slice.spline_edges[-1].ordered_nodes[k, 1]]
         y = [heart_slice.spline_edges[0].ordered_nodes[k, 0],
              heart_slice.spline_edges[-1].ordered_nodes[k, 0]]
 
-        ax.plot(x, y, 'k', lw=0.5)
-        ax.axis('off')
-        ax.set_aspect('equal', 'box')
+        if k in [index - 1, index]:
+            ax.plot(x, y, 'k', lw=1.)
+            axs['sa_zoom'].plot(x, y, 'k', lw=1.)
+            axs['segments_zoom'].plot(x, y, 'k', lw=1.)
+        else:
+            ax.plot(x, y, 'k', lw=0.5)
 
-# Show image
-axs[0].imshow(heart_slice.image, cmap=cmap, origin='lower')
-axs[1].imshow(heart_slice.image, cmap=cmap, origin='lower')
+for _, ax in axs.items():
+    ax.axis('off')
+    ax.set_aspect('equal', 'box')
 
-segment_indexes = [3, 15, 27]
 
 segment_mask = np.isin(heart_slice.total_segments, segment_indexes)
-x_min = np.min(np.where(segment_mask)[0])
-x_max = np.max(np.where(segment_mask)[0])
-y_min = np.min(np.where(segment_mask)[1])
-y_max = np.max(np.where(segment_mask)[1])
 
-axs[1].set_xlim([y_min, y_max])
-axs[1].set_ylim([x_min + 0.2 * (x_max - x_min), x_max])
+# Show image
+axs['segments'].imshow(heart_slice.image, cmap=cmap, origin='lower')
+im = heart_slice.image.copy()
+im[~segment_mask] = 0
+axs['segments_zoom'].imshow(im, cmap=cmap, origin='lower')
+
+
+x_min = np.min(np.where(segment_mask)[0]) - 10
+x_max = np.max(np.where(segment_mask)[0]) + 10
+y_min = np.min(np.where(segment_mask)[1]) - 10
+y_max = np.max(np.where(segment_mask)[1]) + 10
+
+
+axs['sa_zoom'].set_xlim([y_min, y_max])
+axs['sa_zoom'].set_ylim([x_min, x_max])
 
 for segment_index in range(1, heart_slice.total_segments.max() + 1):
-    segment_objects_props = objects_props[objects_props['segment_labels'] == segment_index]
+    segment_objects_props = objects_props[objects_props['segment_labels']
+                                          == segment_index]
+
+    r = segment_objects_props['axis_ratio'].values
+    theta = segment_objects_props['orientation'].values
+    r = np.concatenate([r, r])
+    theta = np.concatenate([theta, theta + np.pi])
     dist_ellipse_builder = DistributionEllipseBuilder()
-    dist_ellipse_builder.build(segment_objects_props)
+    dist_ellipse_builder.build(r, theta, n_std=n_std)
     dist_ellipse = dist_ellipse_builder.dist_ellipse
 
     coords = np.argwhere(heart_slice.total_segments == segment_index)
     ry, rx = coords.mean(axis=0)
 
-    draw_points(axs[2], rx, ry, segment_objects_props, segment_index)
-    draw_points(axs[3], rx, ry, segment_objects_props, segment_index)
-
-    draw_ellipse(axs[2], rx, ry, dist_ellipse)
-    draw_ellipse(axs[3], rx, ry, dist_ellipse)
-
-    draw_text(axs[0], rx, ry, segment_index)
+    draw_points(axs['sa'], rx, ry, segment_objects_props, segment_index)
+    draw_ellipse(axs['sa'], rx, ry, dist_ellipse)
+    draw_text(axs['segments'], rx, ry, segment_index)
 
     if segment_index in segment_indexes:
-        draw_text(axs[1], rx, ry, segment_index)
+        draw_points(axs['sa_zoom'], rx, ry, segment_objects_props,
+                    segment_index)
+        draw_ellipse(axs['sa_zoom'], rx, ry, dist_ellipse)
+        draw_text(axs['segments_zoom'], rx, ry, segment_index)
 
 
-x = segments_props['centroid-0']
-y = segments_props['centroid-1']
+x = segments_props['centroid-0'].values[segment_indexes - 1]
+y = segments_props['centroid-1'].values[segment_indexes - 1]
 
-edge_direction = segments_props['edge_direction']
-ellipse_width = segments_props['sa_major_axis']
+edge_direction = segments_props['edge_direction'].values[segment_indexes - 1]
+ellipse_width = segments_props['sa_major_axis'].values[segment_indexes - 1]
+r_orientation = segments_props['relative_orientation'].values[segment_indexes - 1]
 
-ellipse_orientation = (edge_direction
-                       - segments_props['relative_orientation'])
+e_orientation = edge_direction - r_orientation
 
 U = n_std * 10 * 0.5 * ellipse_width * np.cos(edge_direction)
 V = n_std * 10 * 0.5 * ellipse_width * np.sin(edge_direction)
-axs[3].quiver(y, x, V, U, scale_units='xy', scale=1, color='black')
+axs['sa_zoom'].quiver(y, x, V, U, scale_units='xy', scale=1, color='black')
 
-U = n_std * 10 * 0.5 * ellipse_width * np.cos(ellipse_orientation)
-V = n_std * 10 * 0.5 * ellipse_width * np.sin(ellipse_orientation)
-axs[3].quiver(y, x, V, U, scale_units='xy', scale=1, color='red')
+U = n_std * 10 * 0.5 * ellipse_width * np.cos(e_orientation)
+V = n_std * 10 * 0.5 * ellipse_width * np.sin(e_orientation)
+axs['sa_zoom'].quiver(y, x, V, U, scale_units='xy', scale=1, color='red')
 
+index = segment_indexes[0]
 
-axs[0].set_title('A', loc='left', fontsize=14)
-axs[1].set_title('C', loc='left', fontsize=14)
-axs[2].set_title('B', loc='left', fontsize=14)
-axs[3].set_title('D', loc='left',
-                 fontsize=14)
+for k in [index - 1, index]:
+    x = [heart_slice.spline_edges[0].ordered_nodes[k, 1],
+         heart_slice.spline_edges[-1].ordered_nodes[k, 1]]
+    y = [heart_slice.spline_edges[0].ordered_nodes[k, 0],
+         heart_slice.spline_edges[-1].ordered_nodes[k, 0]]
+
+    if k == index:
+        draw_lines(fig, axs['segments'], axs['segments_zoom'],
+                   x[1], y[1], 2840, 1290, lw=1.)
+        draw_lines(fig, axs['sa'], axs['sa_zoom'], x[1], y[1], 2840, 1290,
+                   lw=1.)
+    else:
+        draw_lines(fig, axs['segments'], axs['segments_zoom'],
+                   x[1], y[1], x[1], y[1], lw=1.)
+        draw_lines(fig, axs['sa'], axs['sa_zoom'], x[1], y[1], x[1], y[1],
+                   lw=1.)
+
+    draw_lines(fig, axs['segments'], axs['segments_zoom'],
+               x[0], y[0], x[0], y[0], lw=1.)
+    draw_lines(fig, axs['sa'], axs['sa_zoom'], x[0], y[0], x[0], y[0], lw=1.)
+
+axs['segments'].set_title('A. Segmented Slice', loc='left', fontsize=12)
+# axs['segments_zoom'].set_title('C. Segment 3, 15, 27', loc='left', fontsize=12)
+axs['sa'].set_title('B. Structural Anisotropy', loc='left', fontsize=12)
+# axs['sa_zoom'].set_title('D. Segment\'s SA', loc='left', fontsize=12)
 
 plt.show()
 
-# fig.savefig('paperfigures/figures/slice_anisotropy.png', dpi=300,
-#             bbox_inches='tight')
+fig.savefig('paperfigures/figures/slice_anisotropy.png', dpi=300,
+            bbox_inches='tight')

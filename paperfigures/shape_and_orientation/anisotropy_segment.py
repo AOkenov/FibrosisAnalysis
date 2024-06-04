@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors, colormaps
 from skimage import morphology, segmentation
+from sklearn.covariance import EmpiricalCovariance
 
 from bitis.texture.properties import (
     DistributionEllipseBuilder,
@@ -30,21 +31,38 @@ def swap_axis(angle):
 
 
 def draw_anisotropy(ax, objects_props, n_std=2):
-    dist_ellipse_builder = DistributionEllipseBuilder()
-    dist_ellipse = dist_ellipse_builder.build(objects_props)
-    full_theta = swap_axis(dist_ellipse.full_theta)
-    orientation = swap_axis(dist_ellipse.orientation)
-    r, theta, d = PolarPlots.sort_by_density(objects_props.axis_ratio,
-                                             swap_axis(objects_props.orientation))
 
+    r = objects_props['axis_ratio'].values
+    theta = swap_axis(objects_props['orientation'].values)
+    r = np.concatenate([r, r])
+    theta = np.concatenate([theta, theta + np.pi])
+
+    r, theta, d = PolarPlots.sort_by_density(r, theta)
     ax.scatter(theta, r, c=d, s=30, alpha=1, cmap='viridis')
-    ax.plot(full_theta, dist_ellipse.full_radius, color='red')
 
+    dist_ellipse_builder = DistributionEllipseBuilder()
+    dist_ellipse = dist_ellipse_builder.build(r, theta, n_std=n_std)
+    orientation = dist_ellipse.orientation % np.pi
+    ax.plot(dist_ellipse.full_theta, dist_ellipse.full_radius, color='red')
     ax.quiver(0, 0, orientation, 0.5 * dist_ellipse.width,
               angles='xy', scale_units='xy', scale=1, color='red')
     ax.quiver(0, 0, 0.5 * np.pi + orientation,
               0.5 * dist_ellipse.height,
               angles='xy', scale_units='xy', scale=1, color='red')
+    
+    # dist_ellipse_builder = DistributionEllipseBuilder()
+    # dist_ellipse_builder.cov_estimator = EmpiricalCovariance()
+    # dist_ellipse = dist_ellipse_builder.build(r, theta, n_std=n_std)
+    # orientation = dist_ellipse.orientation
+    # ax.plot(dist_ellipse.full_theta, dist_ellipse.full_radius, color='blue',
+    #         ls='--')
+    # # ax.quiver(0, 0, orientation, 0.5 * dist_ellipse.width,
+    # #           angles='xy', scale_units='xy', scale=1, color='red')
+    # # ax.quiver(0, 0, 0.5 * np.pi + orientation,
+    # #           0.5 * dist_ellipse.height,
+    # #           angles='xy', scale_units='xy', scale=1, color='red')
+
+
 
 
 def draw_segment(ax, image, objects_props):
@@ -68,11 +86,11 @@ def draw_segment(ax, image, objects_props):
         x += xy[0]
         ax.plot(y, x, color=color, lw=1)
 
-    ax.axis('off')
+    # ax.axis('off')
 
 
-path = Path(__file__).parent.parent.parent.joinpath('data')
-# path = Path('/Users/arstanbek/Library/CloudStorage/OneDrive-UGent/data')
+# path = Path(__file__).parent.parent.parent.joinpath('data')
+path = Path('/Users/arstanbek/Library/CloudStorage/OneDrive-UGent/data')
 path_stats = path
 
 heart = 'E11444_LMNA'
@@ -95,9 +113,9 @@ objects_props = objects_analysis.build_props(mask)
 
 n_std = 2
 
-fig = plt.figure(figsize=(11, 5))
+fig = plt.figure(figsize=(8, 4))
 gs = fig.add_gridspec(1, 2, left=0.05, right=0.95,
-                      bottom=0.05, top=0.9, wspace=0.05, hspace=0.2)
+                      bottom=0.1, top=0.8, wspace=0.1, hspace=0.2)
 axs = []
 axs.append(fig.add_subplot(gs[0]))
 draw_segment(axs[0], image, objects_props)
@@ -105,8 +123,8 @@ draw_segment(axs[0], image, objects_props)
 axs.append(fig.add_subplot(gs[1], projection='polar'))
 draw_anisotropy(axs[-1], objects_props, n_std)
 
-axs[0].set_title('A', loc='left', fontsize=14, y=1)
-axs[1].set_title('B', loc='left', fontsize=14, y=0.985)
+axs[0].set_title('A. Fibrotic Clusters', loc='left', fontsize=12, y=1.1)
+axs[1].set_title('B. Structural Anisotropy', loc='left', fontsize=12, y=1.1)
 plt.show()
 
 # fig.savefig('paperfigures/figures/segment_anisotropy.png', dpi=300,

@@ -94,14 +94,14 @@ axs["slice"].imshow(image, cmap=cmap, origin='lower', aspect='equal',
 axs["slice"].axis('off')
 
 show_zoom(image, axs["slice"], axs["szoom"], x0, y0, dx0, dy0, cmap,
-          title='A. Histological')
+          title='A. Histological slice')
 
 axs["generated"].imshow(image_gen, cmap=cmap, origin='lower', aspect='equal',
                         vmin=0, vmax=2)
 axs["generated"].axis('off')
 
 show_zoom(image_gen, axs["generated"], axs["gzoom"], x0, y0, dx0, dy0, cmap,
-          title='B. Uniform Generator')
+          title='C. Uniform Generator')
 
 print(density_map.max())
 
@@ -113,7 +113,7 @@ dmap = axs["density"].imshow(density_map, cmap='inferno_r', origin='lower',
 axs["density"].axis('off')
 
 show_zoom(density_map, axs["density"], axs["dzoom"], x0, y0, dx0, dy0,
-          cmap='inferno_r', title='C. Density Map', vmin=0, vmax=0.8)
+          cmap='inferno_r', title='B. Density Map', vmin=0, vmax=0.8)
 
 axs['dbar'].axis('off')
 cbar = fig.colorbar(dmap, orientation='vertical', ax=axs['dbar'],

@@ -12,7 +12,6 @@ from fibrosisanalysis.segmentation import (
     SplineEdge
 )
 from fibrosisanalysis.plots.polar_plots import PolarPlots
-from fibrosisanalysis.analysis.objects_properties import ObjectsPropertiesBuilder
 
 
 cmap = colors.LinearSegmentedColormap.from_list(
@@ -79,40 +78,6 @@ dx0 = dx1
 edge_colors = ['#1f77b4', '#2ca02c']
 
 
-def clear_image(image, min_size=10):
-    mask = image == 2
-    mask = morphology.remove_small_objects(mask, min_size)
-    mask = segmentation.clear_border(mask)
-    image[(mask == 0) & (image > 0)] = 1
-    return image
-
-
-def draw_convex_hull(ax, labeled, colors):
-    for i in range(1, labeled.max() + 1):
-        color = colors[i - 1]
-        coords = np.argwhere(labeled == i)
-        hull = spatial.ConvexHull(coords)
-        hull_vertices = list(hull.vertices) + [hull.vertices[0]]
-        hull_coords = coords[hull_vertices]
-        ax.plot(hull_coords[:, 1], hull_coords[:, 0], color=color, lw=1)
-
-
-def draw_ellipses(ax, props, colors):
-    for i, label in enumerate(props['label']):
-        color = colors[label - 1]
-        width = props['major_axis_length'][i]
-        height = props['minor_axis_length'][i]
-        alpha = props['orientation'][i]
-        centroids = props[['centroid-0', 'centroid-1']].to_numpy(int)
-        xy = centroids[i]
-
-        res = PolarPlots.rotated_ellipse(width, height, 0.5 * np.pi - alpha)
-        y, x = PolarPlots.polar_to_cartesian(*res)
-        y += xy[1]
-        x += xy[0]
-        ax.plot(y, x, color=color, lw=1)
-
-
 def draw_lines(fig, ax0, ax1, x0, y0, x1, y1):
     fig.canvas.draw()
     transFigure = fig.transFigure.inverted()
@@ -147,7 +112,7 @@ axs["slice"].plot(edges['epi'].full_nodes[:, 1], edges['epi'].full_nodes[:, 0],
 rect = patches.Rectangle((x0, y0), dx0, dy0, linewidth=1, edgecolor='black',
                          facecolor='none')
 axs["slice"].add_patch(rect)
-axs["slice"].set_title('A', loc='left', fontsize=16)
+# axs["slice"].set_title('Histological Slice', loc='center', fontsize=12)
 axs["slice"].axis('off')
 
 image_0 = image[y0: y0 + dy0, x0: x0 + dx0]
@@ -156,7 +121,7 @@ axs["zoom0"].imshow(image_0, cmap=cmap, origin='lower', aspect='equal',
 # axs["zoom0"].set_ylim(y0, y0 + dy0)
 # axs["zoom0"].set_xlim(x0, x0 + dx0)
 
-axs["zoom0"].set_title('B', loc='left', fontsize=16)
+# axs["zoom0"].set_title('B', loc='left', fontsize=16)
 axs["zoom0"].set_xticks([])
 axs["zoom0"].set_yticks([])
 

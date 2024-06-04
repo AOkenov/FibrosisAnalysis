@@ -2,3 +2,4 @@ from fibrosisanalysis.segmentation.angular_segments import AngularSegments
 from fibrosisanalysis.segmentation.radial_segments import RadialSegments
 from fibrosisanalysis.segmentation.spline_edge import SplineEdge
 from fibrosisanalysis.segmentation.distance import Distance
+from fibrosisanalysis.segmentation.squared_segments import SquaredSegments

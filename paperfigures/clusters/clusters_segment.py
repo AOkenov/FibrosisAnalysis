@@ -118,7 +118,7 @@ image_0 = image[y0: y0 + dy0, x0: x0 + dx0]
 axs["zoom0"].imshow(image_0, cmap=cmap, origin='lower', aspect='equal',
                     vmin=0, vmax=2)
 
-axs["zoom0"].set_title('A', loc='left', fontsize=16)
+axs["zoom0"].set_title('A. Histological Image', loc='left', fontsize=12)
 axs["zoom0"].set_xticks([])
 axs["zoom0"].set_yticks([])
 
@@ -131,24 +131,24 @@ labeled = morphology.label(image_1 == 2, connectivity=1)
 labeled_masked = np.ma.masked_where(labeled == 0, labeled)
 axs["label"].imshow(labeled_masked, cmap='tab20', origin='lower',
                     aspect='equal', vmin=1, vmax=21)
-axs["label"].set_title('B', loc='left', fontsize=16)
+axs["label"].set_title('B. Labeled Clusters', loc='left', fontsize=12)
 axs["label"].set_xticks([])
 axs["label"].set_yticks([])
 
 axs["convex"].imshow(labeled_masked, cmap='tab20', origin='lower',
                      aspect='equal', vmin=1, vmax=21)
 draw_convex_hull(axs["convex"], labeled, ["black"] * 20)
-axs["convex"].set_title('C', loc='left', fontsize=16)
+axs["convex"].set_title('C. Convex Hull', loc='left', fontsize=12)
 axs["convex"].set_xticks([])
 axs["convex"].set_yticks([])
 
 objects_props_builder = ObjectsPropertiesBuilder()
-objects_props = objects_props_builder.build_from_segment(labeled > 0)
+objects_props = objects_props_builder.build_props(labeled > 0)
 
 axs["ellipse"].imshow(labeled_masked, cmap='tab20', origin='lower',
                       aspect='equal', vmin=1, vmax=21)
 draw_ellipses(axs["ellipse"], objects_props, ['black'] * 20)
-axs["ellipse"].set_title('D', loc='left', fontsize=16)
+axs["ellipse"].set_title('D. Equivalent Ellipses', loc='left', fontsize=12)
 axs["ellipse"].set_xticks([])
 axs["ellipse"].set_yticks([])
 

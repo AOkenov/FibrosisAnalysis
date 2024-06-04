@@ -41,13 +41,18 @@ class SegmentsPropertiesBuilder:
         for i in heart_slice.total_segments_list:
             selected_props = objects_props[objects_props['segment_labels'] == i]
 
-            dist_ellipse = DistributionEllipseBuilder().build(selected_props)
+            r = selected_props['axis_ratio']
+            theta = selected_props['orientation']
+            r = np.concatenate([r, r])
+            theta = np.concatenate([theta, theta + np.pi])
+
+            dist_ellipse = DistributionEllipseBuilder().build(r, theta)
 
             anisotropy.append(dist_ellipse.anisotropy)
             orientation.append(dist_ellipse.orientation)
             width.append(dist_ellipse.width)
             height.append(dist_ellipse.height)
-  
+
         props['structural_anisotropy'] = np.array(anisotropy)
         props['sa_orientation'] = np.array(orientation)
         props['sa_major_axis'] = np.array(width)
