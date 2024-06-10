@@ -63,17 +63,23 @@ def draw_anisotropy(ax, objects_props, n_std=2):
     # #           angles='xy', scale_units='xy', scale=1, color='red')
 
 
-
-
 def draw_segment(ax, image, objects_props):
     ax.imshow(image, cmap=cmap, origin='lower', vmin=0, vmax=2)
-    inds, density = PolarPlots.sorting_idx(objects_props['axis_ratio'].values,
-                                           objects_props['orientation'].values)
+
+    r = objects_props['axis_ratio'].values
+    theta = swap_axis(objects_props['orientation'].values)
+    r_d = np.concatenate([r, r])
+    theta_d = np.concatenate([theta, theta + np.pi])
+
+    _, _, dens_d = PolarPlots.point_density(r_d, theta_d)
+    inds = np.argsort(dens_d)
+    inds = inds[inds < len(r)]
+    dens = dens_d[inds]
 
     colors = colormaps.get_cmap('viridis')
 
-    for i, dens in zip(inds, density):
-        color = colors(dens / density.max())
+    for i, d in zip(inds, dens):
+        color = colors(d / dens.max())
         width = objects_props['major_axis_length'].iloc[i]
         height = objects_props['minor_axis_length'].iloc[i]
         alpha = objects_props['orientation'].iloc[i]
@@ -127,5 +133,5 @@ axs[0].set_title('A. Fibrotic Clusters', loc='left', fontsize=12, y=1.1)
 axs[1].set_title('B. Structural Anisotropy', loc='left', fontsize=12, y=1.1)
 plt.show()
 
-# fig.savefig('paperfigures/figures/segment_anisotropy.png', dpi=300,
-#             bbox_inches='tight')
+fig.savefig('paperfigures/figures/segment_anisotropy.png', dpi=300,
+            bbox_inches='tight')

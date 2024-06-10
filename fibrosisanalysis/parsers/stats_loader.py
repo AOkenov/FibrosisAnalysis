@@ -30,10 +30,11 @@ class StatsLoader(Loader):
     None
     """
 
-    def __init__(self, path='.', subdir='Stats'):
+    def __init__(self, path='.', subdir='Stats', collected_columns=None):
         """Initialize an instance of StatsLoader.
         """
         super().__init__(path, subdir=subdir, file_type='.pkl')
+        self.collected_columns = collected_columns
 
     def load_slice_data(self, path, asdf=True):
         """Load a single slice of data from a pkl file.
@@ -54,30 +55,9 @@ class StatsLoader(Loader):
         data = pd.read_pickle(path.with_suffix(self.file_type))
         data['FileName'] = path.stem
 
+        if self.collected_columns is not None:
+            data = data[self.collected_columns]
+
         # data = pd.read_csv(path.with_suffix('.csv'), usecols=columns)
         # data.to_csv(path.joinpath(file).with_suffix('.csv'))
         return data
-
-    def setup_data(self, df):
-        """Perform data setup and feature engineering on the input DataFrame.
-
-        Parameters
-        ----------
-        df : pd.DataFrame
-            Input data.
-
-        Returns
-        -------
-        pd.DataFrame
-            Processed DataFrame with additional features.
-        """
-        df['position'] = (df['endo distance'] / (df['endo distance']
-                                                 + df['epi distance']))
-        df['convex hull area'] = df['area'] / df['solidity']
-        df['ellipse area'] = (np.pi * df['minor_axis_length']
-                              * df['major_axis_length'])
-
-        df = df.loc[(df['epi distance'] >= 0)
-                    & (df['endo distance'] >= 0)].reset_index()
-
-        return df
