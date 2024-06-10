@@ -119,5 +119,5 @@ for i, heart in enumerate(sorted_hearts):
 
 plt.subplots_adjust(top=0.95, bottom=0.1, right=0.98, left=0.1,
                     wspace=0.3, hspace=0.2)
-fig.savefig('paperfigures/figures/density_per_slice.png', dpi=300)
-plt.show()
+# fig.savefig('paperfigures/figures/density_per_slice.png', dpi=300)
+# plt.show()

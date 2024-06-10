@@ -72,7 +72,7 @@ class AngularSegments:
 
     @staticmethod
     def build(spline_edges, number_of_segments, node_step=3,
-              optimization_step=5):
+              optimization_step=1):
         """Compute the starting and ending points of radial lines for
         segmentation.
 

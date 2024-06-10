@@ -71,7 +71,7 @@ class SplineEdge:
         x, y = np.append(self.nodes, [self.nodes[0]], axis=0).T
 
         # Perform spline interpolation
-        (t, c, k), u = interpolate.splprep([x, y], s=0)
+        (t, c, k), u = interpolate.splprep([x, y], s=0, per=1)
         c = np.asarray(c).T
         bspline = interpolate.BSpline(t, c, k)
 
