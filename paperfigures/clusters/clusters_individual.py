@@ -94,4 +94,4 @@ for i, n in enumerate([8, 20, 3, 36]):
 plt.tight_layout()
 plt.show()
 
-fig.savefig('paperfigures/figures/fibrosis_structures.png', dpi=300)
+# fig.savefig('paperfigures/figures/fibrosis_structures.png', dpi=300)

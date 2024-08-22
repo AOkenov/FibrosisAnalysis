@@ -11,7 +11,7 @@ from fibrosisanalysis.analysis import (
     ObjectsPropertiesBuilder,
     SegmentsPropertiesBuilder
 )
-from fibrosisanalysis.plots.polar_plots import PolarPlots
+from bitis.texture.properties.polar_plots import PolarPlots
 
 
 cmap = colors.LinearSegmentedColormap.from_list(
@@ -238,5 +238,5 @@ axs['sa'].set_title('B. Structural Anisotropy', loc='left', fontsize=12)
 
 plt.show()
 
-fig.savefig('paperfigures/figures/slice_anisotropy.png', dpi=300,
-            bbox_inches='tight')
+# fig.savefig('paperfigures/figures/slice_anisotropy.png', dpi=300,
+#             bbox_inches='tight')
