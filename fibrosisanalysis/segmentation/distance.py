@@ -1,6 +1,5 @@
 import numpy as np
 from scipy import spatial
-from skimage import filters
 
 
 class Distance:
